@@ -35,7 +35,6 @@
 	.export		_BallSpr
 	.export		_breaky_bg2
 	.export		_c1
-	.export		_sprid
 	.export		_pad1
 	.export		_pad1_new
 	.export		_collision
@@ -623,8 +622,6 @@ _palette_sp:
 .segment	"BSS"
 
 .segment	"ZEROPAGE"
-_sprid:
-	.res	1,$00
 _pad1:
 	.res	1,$00
 _pad1_new:
@@ -700,7 +697,7 @@ L024D:	lda     _c1,y
 ;
 	lda     #$00
 	sta     _temp_y
-L035B:	lda     _temp_y
+L0355:	lda     _temp_y
 	cmp     #$10
 	bcs     L0256
 ;
@@ -708,9 +705,9 @@ L035B:	lda     _temp_y
 ;
 	lda     #$00
 	sta     _temp_x
-L035C:	lda     _temp_x
+L0356:	lda     _temp_x
 	cmp     #$10
-	bcs     L035F
+	bcs     L0359
 ;
 ; temp1 = (temp_y << 4) + temp_x;
 ;
@@ -726,13 +723,13 @@ L035C:	lda     _temp_x
 ; if((temp_x == 0) || (temp_x == 15)) {
 ;
 	lda     _temp_x
-	beq     L035D
+	beq     L0357
 	cmp     #$0F
 	bne     L0268
 ;
 ; vram_put(0x10); // wall at the edges
 ;
-L035D:	lda     #$10
+L0357:	lda     #$10
 	jsr     _vram_put
 ;
 ; vram_put(0x10);
@@ -741,13 +738,13 @@ L035D:	lda     #$10
 ;
 ; else {
 ;
-	jmp     L035A
+	jmp     L0354
 ;
 ; if(c_map[temp1]){ // if block = yes
 ;
 L0268:	ldy     _temp1
 	lda     _c_map,y
-	beq     L035E
+	beq     L0358
 ;
 ; vram_put(0x11); // draw block
 ;
@@ -760,26 +757,26 @@ L0268:	ldy     _temp1
 ;
 ; else{
 ;
-	jmp     L035A
+	jmp     L0354
 ;
 ; vram_put(0); // else draw blank
 ;
-L035E:	jsr     _vram_put
+L0358:	jsr     _vram_put
 ;
 ; vram_put(0);
 ;
 	lda     #$00
-L035A:	jsr     _vram_put
+L0354:	jsr     _vram_put
 ;
 ; for(temp_x = 0; temp_x < 16; ++temp_x){
 ;
 	inc     _temp_x
-	jmp     L035C
+	jmp     L0356
 ;
 ; for(temp_y = 0; temp_y < 16; ++temp_y){
 ;
-L035F:	inc     _temp_y
-	jmp     L035B
+L0359:	inc     _temp_y
+	jmp     L0355
 ;
 ; ppu_on_all();
 ;
@@ -802,48 +799,31 @@ L0256:	jmp     _ppu_on_all
 ;
 	jsr     _oam_clear
 ;
-; sprid = 0;
+; oam_meta_spr(Paddle.X, Paddle.Y, PaddleSpr);
 ;
-	lda     #$00
-	sta     _sprid
-;
-; sprid = oam_meta_spr(Paddle.X, Paddle.Y, sprid, PaddleSpr);
-;
-	jsr     decsp3
+	jsr     decsp2
 	lda     _Paddle
-	ldy     #$02
+	ldy     #$01
 	sta     (sp),y
 	lda     _Paddle+1
-	dey
-	sta     (sp),y
-	lda     _sprid
 	dey
 	sta     (sp),y
 	lda     #<(_PaddleSpr)
 	ldx     #>(_PaddleSpr)
 	jsr     _oam_meta_spr
-	sta     _sprid
 ;
-; sprid = oam_meta_spr(Ball.X, Ball.Y, sprid, BallSpr);
+; oam_meta_spr(Ball.X, Ball.Y, BallSpr);
 ;
-	jsr     decsp3
+	jsr     decsp2
 	lda     _Ball
-	ldy     #$02
+	ldy     #$01
 	sta     (sp),y
 	lda     _Ball+1
 	dey
 	sta     (sp),y
-	lda     _sprid
-	dey
-	sta     (sp),y
 	lda     #<(_BallSpr)
 	ldx     #>(_BallSpr)
-	jsr     _oam_meta_spr
-	sta     _sprid
-;
-; }
-;
-	rts
+	jmp     _oam_meta_spr
 
 .endproc
 
@@ -862,7 +842,7 @@ L0256:	jmp     _ppu_on_all
 ;
 	lda     _pad1
 	and     #$02
-	beq     L0363
+	beq     L035D
 ;
 ; Paddle.X -= 2;
 ;
@@ -874,15 +854,15 @@ L0256:	jmp     _ppu_on_all
 ; if(Paddle.X < PADDLE_MIN) Paddle.X = PADDLE_MIN;
 ;
 	cmp     #$10
-	bcs     L0363
+	bcs     L035D
 	lda     #$10
 	sta     _Paddle
 ;
 ; if(pad1 & PAD_RIGHT){
 ;
-L0363:	lda     _pad1
+L035D:	lda     _pad1
 	and     #$01
-	beq     L0364
+	beq     L035E
 ;
 ; Paddle.X += 2;
 ;
@@ -894,14 +874,14 @@ L0363:	lda     _pad1
 ; if(Paddle.X > PADDLE_MAX) Paddle.X = PADDLE_MAX;
 ;
 	cmp     #$D1
-	bcc     L0364
+	bcc     L035E
 	lda     #$D0
 	sta     _Paddle
 ;
 ; if(ball_state == BALL_OFF){ // ball is inactive, wait a second
 ;
-L0364:	lda     _ball_state
-	bne     L0366
+L035E:	lda     _ball_state
+	bne     L0360
 ;
 ; ++ball_count;
 ;
@@ -911,7 +891,7 @@ L0364:	lda     _ball_state
 ;
 	lda     _ball_count
 	cmp     #$3D
-	bcc     L0365
+	bcc     L035F
 ;
 ; ball_state = BALL_STUCK;
 ;
@@ -934,14 +914,14 @@ L0364:	lda     _ball_state
 ;
 ; Ball.Y = 0xff; // off screen
 ;
-L0365:	lda     #$FF
+L035F:	lda     #$FF
 	sta     _Ball+1
 ;
 ; if(ball_state == BALL_STUCK){ // ball is stuck to the paddle
 ;
-L0366:	lda     _ball_state
+L0360:	lda     _ball_state
 	cmp     #$01
-	bne     L0368
+	bne     L0362
 ;
 ; Ball.X = Paddle.X + ball_x_rel;
 ;
@@ -961,7 +941,7 @@ L0366:	lda     _ball_state
 ;
 	lda     _pad1_new
 	and     #$C0
-	beq     L0368
+	beq     L0362
 ;
 ; ball_state = BALL_ACTIVE;
 ;
@@ -977,15 +957,15 @@ L0366:	lda     _ball_state
 ;
 	lda     _Ball
 	cmp     #$10
-	bcs     L0367
+	bcs     L0361
 	lda     #$10
 	sta     _Ball
 ;
 ; if(Ball.X > BALL_MAX) Ball.X = BALL_MAX;
 ;
-L0367:	lda     _Ball
+L0361:	lda     _Ball
 	cmp     #$EB
-	bcs     L036E
+	bcs     L0368
 ;
 ; } 
 ;
@@ -993,7 +973,7 @@ L0367:	lda     _Ball
 ;
 ; if(Ball.X > BALL_MAX) Ball.X = BALL_MAX;
 ;
-L036E:	lda     #$EA
+L0368:	lda     #$EA
 	sta     _Ball
 ;
 ; return;
@@ -1002,9 +982,9 @@ L036E:	lda     #$EA
 ;
 ; if(ball_state == BALL_ACTIVE){
 ;
-L0368:	lda     _ball_state
+L0362:	lda     _ball_state
 	cmp     #$02
-	beq     L036F
+	beq     L0369
 ;
 ; } 
 ;
@@ -1012,8 +992,8 @@ L0368:	lda     _ball_state
 ;
 ; if(ball_direction == GOING_UP){
 ;
-L036F:	lda     _ball_direction
-	bne     L0369
+L0369:	lda     _ball_direction
+	bne     L0363
 ;
 ; Ball.Y -= 3;
 ;
@@ -1025,7 +1005,7 @@ L036F:	lda     _ball_direction
 ; if(Ball.Y < MAX_UP){
 ;
 	cmp     #$30
-	bcs     L036A
+	bcs     L0364
 ;
 ; ball_direction = GOING_DOWN;
 ;
@@ -1034,11 +1014,11 @@ L036F:	lda     _ball_direction
 ;
 ; else { // going down
 ;
-	jmp     L036A
+	jmp     L0364
 ;
 ; Ball.Y += 3;
 ;
-L0369:	lda     #$03
+L0363:	lda     #$03
 	clc
 	adc     _Ball+1
 	sta     _Ball+1
@@ -1046,7 +1026,7 @@ L0369:	lda     #$03
 ; if(Ball.Y > MAX_DOWN){
 ;
 	cmp     #$E1
-	bcc     L02D1
+	bcc     L02CB
 ;
 ; --lives01;
 ;
@@ -1059,7 +1039,7 @@ L0369:	lda     #$03
 ;
 ; collision = check_collision(&Ball, &Paddle);
 ;
-L02D1:	lda     #<(_Ball)
+L02CB:	lda     #<(_Ball)
 	ldx     #>(_Ball)
 	jsr     pushax
 	lda     #<(_Paddle)
@@ -1070,7 +1050,7 @@ L02D1:	lda     #<(_Ball)
 ; if(collision){
 ;
 	lda     _collision
-	beq     L036A
+	beq     L0364
 ;
 ; ball_state = BALL_STUCK;
 ;
@@ -1086,7 +1066,7 @@ L02D1:	lda     #<(_Ball)
 ;
 ; temp_x = (Ball.X + 1) & 0xf0; // tiles are 16 px wide
 ;
-L036A:	lda     _Ball
+L0364:	lda     _Ball
 	clc
 	adc     #$01
 	and     #$F0
@@ -1103,7 +1083,7 @@ L036A:	lda     _Ball
 ; if(temp_y < 0xaf){ // Y of 0x30 + 16*8 = b0. Ball.Y>b0 = off the c_map
 ;
 	cmp     #$AF
-	bcs     L036C
+	bcs     L0366
 ;
 ; temp1 = (temp_x>>4) + (((temp_y-0x30) << 1) & 0xf0);
 ;
@@ -1133,7 +1113,7 @@ L036A:	lda     _Ball
 ;
 ; temp_x = (Ball.X + 4) & 0xf0; // tiles are 16 px wide
 ;
-L036C:	lda     _Ball
+L0366:	lda     _Ball
 	clc
 	adc     #$04
 	and     #$F0
@@ -1150,7 +1130,7 @@ L036C:	lda     _Ball
 ; if(temp_y < 0xaf){ // Y of 0x30 + 16*8 = b0. Ball.Y>b0 = off the c_map
 ;
 	cmp     #$AF
-	bcs     L0307
+	bcs     L0301
 ;
 ; temp1 = (temp_x>>4) + (((temp_y-0x30) << 1) & 0xf0);
 ;
@@ -1180,7 +1160,7 @@ L036C:	lda     _Ball
 ;
 ; } 
 ;
-L0307:	rts
+L0301:	rts
 
 .endproc
 
@@ -1266,7 +1246,7 @@ L0307:	rts
 ;
 	lda     _score01
 	cmp     #$0A
-	bcc     L0354
+	bcc     L034E
 ;
 ; score01 -= 10;
 ;
@@ -1280,7 +1260,7 @@ L0307:	rts
 ;
 ; }
 ;
-L0354:	rts
+L034E:	rts
 
 .endproc
 
@@ -1352,12 +1332,12 @@ L0354:	rts
 ; ++address;
 ;
 	inc     _address
-	bne     L0323
+	bne     L031D
 	inc     _address+1
 ;
 ; one_vram_buffer(0, address); // also the one to the right of it
 ;
-L0323:	lda     #$00
+L031D:	lda     #$00
 	jsr     pusha
 	lda     _address
 	ldx     _address+1

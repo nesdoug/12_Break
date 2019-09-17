@@ -102,13 +102,10 @@ void draw_bg(void){
 void draw_sprites(void){
 	// clear all sprites from sprite buffer
 	oam_clear();
-
-	// reset index into the sprite buffer
-	sprid = 0;
 	
 	// draw 2 metasprites
-	sprid = oam_meta_spr(Paddle.X, Paddle.Y, sprid, PaddleSpr);
-	sprid = oam_meta_spr(Ball.X, Ball.Y, sprid, BallSpr);
+	oam_meta_spr(Paddle.X, Paddle.Y, PaddleSpr);
+	oam_meta_spr(Ball.X, Ball.Y, BallSpr);
 }
 	
 	
