@@ -31,7 +31,6 @@ void main (void) {
 	draw_bg();
 	
 	set_vram_buffer(); // do at least once, sets a pointer to a buffer
-	clear_vram_buffer();
 	
 	// turn on screen
 	// ppu_on_all(); // already done in draw_bg()
@@ -44,7 +43,6 @@ void main (void) {
 		pad1 = pad_poll(0); // read the first controller
 		pad1_new = get_pad_new(0); // newly pressed button. do pad_poll first
 		
-		clear_vram_buffer(); // do at the beginning of each frame
 		score_lives_draw();
 		
 		if(lives01){
